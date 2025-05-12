@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-sample-plugin",
+	"name": "korean-book-search",
 	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"description": "bookSearch is a plugin for Obsidian that allows you to search for books in your library and view their details.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
