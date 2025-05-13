@@ -62,7 +62,7 @@ export default class MyPlugin extends Plugin {
 			}
 		});
 
-		ribbonIconEl.addClass('my-plugin-ribbon-class');
+		ribbonIconEl.addClass('korean-book-search-ribbon-class');
 
 		this.addSettingTab(new SampleSettingTab(this.app, this));
 	}
@@ -100,10 +100,10 @@ class SampleSettingTab extends PluginSettingTab {
 		const {containerEl} = this;
 
 		containerEl.empty();
-		containerEl.createEl('h2', {text: '🚀API KEY 설정'});
+		containerEl.createEl('h2', {text: '🚀API KEY 설정 (Aladin API Key Setup)'});
 		new Setting(containerEl)
 			.setName('API_KEY')
-			.setDesc('aladin API Key를 입력하세요')
+			.setDesc('aladin API Key를 입력하세요 (Enter your Aladin API key)')
 			.addText(text =>{
 				text.inputEl.type = 'password';
 				text.setPlaceholder('ttbkey...')
@@ -113,7 +113,7 @@ class SampleSettingTab extends PluginSettingTab {
 				})})
 			.addButton(btn =>
 				btn
-					.setButtonText('저장')
+					.setButtonText('save')
 					.setCta()
 					.onClick(async () => {
 						this.plugin.settings.API_KEY = apiKeyInput;
@@ -121,11 +121,11 @@ class SampleSettingTab extends PluginSettingTab {
 							.then(() => new Notice('✅ API Key가 저장되었습니다'));
 					})
 			);
-		containerEl.createEl('h2', {text: '🧩 기본 필드 토글'});
+		containerEl.createEl('h2', {text: '🧩 기본 필드 토글 (Default Frontmatter Fields)'});
 		this.plugin.settings.defaultFrontmatterFields.forEach((f, index) => {
 			new Setting(containerEl)
-				.setName(`${f.key} 필드 포함 여부`)
-				.setDesc(`${f.key} 필드를 프론트매터에 포함할지 선택`)
+				.setName(`${f.key} 필드 포함 여부 (Include '${f.key}')`)
+				.setDesc(`${f.key} 필드를 프론트매터에 포함할지 선택 (Toggle whether to include '${f.key}' in frontmatter)`)
 				.addToggle(t => {
 					t.setValue(f.enabled)
 						.onChange(async (value) => {
@@ -134,7 +134,7 @@ class SampleSettingTab extends PluginSettingTab {
 						})
 				})
 		})
-		containerEl.createEl('h2', { text: '📋 커스텀 프론트매터 필드 목록' });
+		containerEl.createEl('h2', { text: '📋 커스텀 프론트매터 필드 목록 (Custom Frontmatter Fields)' });
 
 		this.plugin.settings.customFields.forEach((f, index) => {
 			new Setting(containerEl)
@@ -155,7 +155,7 @@ class SampleSettingTab extends PluginSettingTab {
 					}))
 				.addExtraButton(button => {
 					button.setIcon('trash')
-						.setTooltip('Remove field')
+						.setTooltip('필드 삭제 (Remove field)')
 						.onClick(async () => {
 							this.plugin.settings.customFields.splice(index, 1);
 							await this.plugin.saveSettings();
@@ -165,7 +165,7 @@ class SampleSettingTab extends PluginSettingTab {
 		});
 		new Setting(containerEl)
 			.addButton(button => {
-				button.setButtonText('➕ 필드 추가')
+				button.setButtonText('➕ Add')
 					.onClick(async () => {
 						this.plugin.settings.customFields.push({ key: '', value: '' });
 						await this.plugin.saveSettings();
