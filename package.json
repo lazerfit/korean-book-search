@@ -1,5 +1,5 @@
 {
-	"name": "korean-book-search",
+	"name": "korean-book-search-plugin",
 	"version": "1.0.0",
 	"description": "bookSearch is a plugin for Obsidian that allows you to search for books in your library and view their details.",
 	"main": "main.js",
