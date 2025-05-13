@@ -1,11 +1,12 @@
 {
-	"id": "obsidian-koreanBookSearch-plugin",
+	"id": "korean-book-search",
 	"name": "Korean Book Search",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Korean Book Search is a plugin for Obsidian that allows you to search for books in your library and view their details.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"description": "Automatically fills in YAML frontmatter with Korean book information from Aladin API based on the note title.",
+	"author": "lazerfit",
+	"authorUrl": "https://github.com/lazerfit",
+	"fundingUrl": "https://github.com/sponsors/lazerfit",
+	"main": "main.js",
 	"isDesktopOnly": false
 }
