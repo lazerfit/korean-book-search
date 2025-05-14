@@ -12,13 +12,13 @@ interface ToggleField {
 	enabled: boolean;
 }
 
-interface MyPluginSettings {
+interface KoreanBookSearchSettings {
 	API_KEY: string;
 	customFields: CustomField[];
 	defaultFrontmatterFields: ToggleField[];
 }
 
-const DEFAULT_SETTINGS: MyPluginSettings = {
+const DEFAULT_SETTINGS: KoreanBookSearchSettings = {
 	API_KEY: 'API_KEY_XXX',
 	customFields: [],
 	defaultFrontmatterFields: [
@@ -29,8 +29,8 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
 	],
 }
 
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+export default class KoreanBookSearchPlugin extends Plugin {
+	settings: KoreanBookSearchSettings;
 
 	async onload() {
 		await this.loadSettings();
@@ -64,7 +64,7 @@ export default class MyPlugin extends Plugin {
 
 		ribbonIconEl.addClass('korean-book-search-ribbon-class');
 
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+		this.addSettingTab(new KoreanBookSearchSettingTab(this.app, this));
 	}
 
 	onunload() {
@@ -88,10 +88,10 @@ export default class MyPlugin extends Plugin {
 
 let apiKeyInput = '';
 
-class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
+class KoreanBookSearchSettingTab extends PluginSettingTab {
+	plugin: KoreanBookSearchPlugin;
 
-	constructor(app: App, plugin: MyPlugin) {
+	constructor(app: App, plugin: KoreanBookSearchPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
