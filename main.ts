@@ -1,12 +1,22 @@
-import { App, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
-import { searchBook, getBookInfo, updateFrontmatter } from "./src/bookService";
+import {App, Notice, Plugin, PluginSettingTab, Setting, TFile} from 'obsidian';
+import { searchBook, getBookInfo, buildUpdatedFrontmatterContent } from "./src/bookService";
 
-interface CustomField {
+export interface BookMetadata {
+	title: string;
+	author: string;
+	pubDate: string;
+	isbn13: string;
+	cover: string;
+	categoryName: string;
+	publisher: string;
+}
+
+export interface CustomField {
 	key: string;
 	value: string;
 }
 
-interface ToggleField {
+export interface ToggleField {
 	key: string;
 	value: string | number;
 	enabled: boolean;
@@ -32,6 +42,20 @@ const DEFAULT_SETTINGS: KoreanBookSearchSettings = {
 export default class KoreanBookSearchPlugin extends Plugin {
 	settings: KoreanBookSearchSettings;
 
+	async setFrontmatterDataToFile(file: TFile, bookInfo: BookMetadata) {
+		const text = await this.app.vault.read(file);
+		const {	newContent, newPath } = buildUpdatedFrontmatterContent(text, bookInfo, this.settings.customFields, this.settings.defaultFrontmatterFields, file.path);
+
+		try {
+			await this.app.vault.modify(file, newContent);
+			await this.app.vault.rename(file, newPath);
+			new Notice('✅ 책 정보가 업데이트 되었습니다.');
+		} catch {
+			new Notice('❌ 책 정보 업데이트 중 오류 발생');
+		}
+
+	}
+
 	async onload() {
 		await this.loadSettings();
 
@@ -39,8 +63,8 @@ export default class KoreanBookSearchPlugin extends Plugin {
 			const file = this.app.workspace.getActiveFile();
 			if (file && file.extension === 'md') {
 				const rawTitle = file.basename;
-				const cleanTitle = rawTitle.replace(/\(.*\)/gi, "").replace(/\[.*\]/gi, "").replace(":", "\uFF1A").replace("?", "\uFF1F").trim();
-				const custom: Record<string, any> = {};
+				const cleanTitle = rawTitle.replace(/\(.*\)/gi, "").replace(/\[.*]/gi, "").replace(":", "\uFF1A").replace("?", "\uFF1F").trim();
+				const custom: Record<string, string> = {};
 				const seen = new Set<string>();
 				this.settings.customFields.forEach(f => {
 					if (!seen.has(f.key.trim())) {
@@ -54,10 +78,11 @@ export default class KoreanBookSearchPlugin extends Plugin {
 					})
 					.then(data => {
 						const bookInfo = data.item[0];
-						updateFrontmatter(file, bookInfo, custom, this.settings.defaultFrontmatterFields);
+						new Notice('✍️ 책 정보 업데이트 중입니다...');
+						this.setFrontmatterDataToFile(file, bookInfo);
 					})
-					.catch(err => {
-						new Notice('❌ 책 정보를 처리 중 오류 발생');
+					.catch(() => {
+						new Notice('❌ 책 정보 처리 중 오류 발생');
 				})
 			}
 		});

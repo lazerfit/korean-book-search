@@ -1,4 +1,9 @@
-import {requestUrl, stringifyYaml, TFile, Notice, normalizePath} from "obsidian";
+import {normalizePath, Notice, requestUrl, stringifyYaml} from "obsidian";
+import {BookMetadata, CustomField, ToggleField} from "../main";
+
+interface BookResponseData {
+	item: BookMetadata[];
+}
 
 const itemSearchUrl = 'http://www.aladin.co.kr/ttb/api/ItemSearch.aspx';
 const itemLookupUrl = 'http://www.aladin.co.kr/ttb/api/ItemLookUp.aspx';
@@ -19,13 +24,16 @@ export const searchBook = async (title: string, ttbKey: string) => {
 	const searchUrl = `${itemSearchUrl}?${params.toString()}`;
 
 	const response = await requestUrl({ url: searchUrl });
-	const data = response.json;
-	const isbn = data.item[0].isbn13;
+	const data: BookResponseData = response.json;
 
-	return isbn;
+	if (data.item.length === 0) {
+		new Notice('❌ 책을 찾을 수 없습니다.');
+	}
+
+	return data.item[0].isbn13 ;
 }
 
-export const getBookInfo = async(isbn: string, ttbKey: string) => {
+export const getBookInfo = async (isbn: string, ttbKey: string) => {
 	const params = new URLSearchParams({
 		ttbkey: ttbKey,
 		ItemId: isbn,
@@ -34,38 +42,33 @@ export const getBookInfo = async(isbn: string, ttbKey: string) => {
 	const lookupUrl = `${itemLookupUrl}?${params.toString()}`;
 
 	const response = await requestUrl({ url: lookupUrl });
-	const data = response.json;
+	const data: BookResponseData = response.json;
 
 	return data;
 }
 
-export const updateFrontmatter = async (file: TFile, bookInfo: Record<string, any>, custom: Record<string, any> = {}, toggleFields: Record<string, any>[]) => {
+export const buildUpdatedFrontmatterContent =  (content: string, bookInfo: BookMetadata, custom: CustomField[], toggleFields: ToggleField[], path: string) => {
 	const fronmatterData = formatFrontmatterData(bookInfo, custom, toggleFields);
 	const yaml = stringifyYaml(fronmatterData);
 	const fullYaml = `---\n${yaml}---\n`;
 
-	const content = await file.vault.adapter.read(file.path);
 	const hasFrontmatter = /^---\n[\s\S]*?\n---/.test(content);
 	const newContent = hasFrontmatter
 		? content.replace(/^---\n[\s\S]*?\n---/, fullYaml)
 		: fullYaml + content;
 
-	await file.vault.adapter.write(file.path, newContent);
-
-	const folderPath = file.path.substring(0, file.path.lastIndexOf("/"));
+	const folderPath = path.substring(0, path.lastIndexOf("/"));
 	const safeTitle = bookInfo.title.replace(/[\/:*?"<>|]/g, "_");
 	const newPath = normalizePath(`${folderPath}/${safeTitle}.md`);
-	await file.vault.adapter.rename(file.path, newPath)
-		.then(() => {
-			new Notice('✅ 책 정보가 업데이트 되었습니다.');
-		})
-		.catch((e) => {
-			new Notice('❌ 책 정보 업데이트 중 오류 발생');
-		});
+
+	return {
+		newContent,
+		newPath,
+	}
 }
 
-const formatFrontmatterData = (raw: Record<string, any>, custom: Record<string, any>, toggleFields: Record<string, any>[]) => {
-	const enabledToggleFields : Record<string, any> = {};
+const formatFrontmatterData = (raw: BookMetadata, custom: CustomField[], toggleFields: ToggleField[]) => {
+	const enabledToggleFields : Record<string, string | number> = {};
 	toggleFields.forEach(f => {
 		if (f.enabled && f.key.trim()) {
 			enabledToggleFields[f.key.trim()] = f.value;
