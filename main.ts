@@ -29,7 +29,7 @@ interface KoreanBookSearchSettings {
 }
 
 const DEFAULT_SETTINGS: KoreanBookSearchSettings = {
-	API_KEY: 'API_KEY_XXX',
+	API_KEY: '',
 	customFields: [],
 	defaultFrontmatterFields: [
 		{key: 'myRate', value: 0, enabled: true},
@@ -61,6 +61,8 @@ export default class KoreanBookSearchPlugin extends Plugin {
 
 		const ribbonIconEl = this.addRibbonIcon('book-open', '책 정보 자동 입력', (evt: MouseEvent) => {
 			const file = this.app.workspace.getActiveFile();
+			const API_KEY = this.settings.API_KEY;
+			if (!API_KEY) return;
 			if (file && file.extension === 'md') {
 				const rawTitle = file.basename;
 				const cleanTitle = rawTitle.replace(/\(.*\)/gi, "").replace(/\[.*]/gi, "").replace(":", "\uFF1A").replace("?", "\uFF1F").trim();
@@ -72,9 +74,9 @@ export default class KoreanBookSearchPlugin extends Plugin {
 						seen.add(f.key.trim());
 					}
 				});
-				searchBook(cleanTitle, this.settings.API_KEY)
+				searchBook(cleanTitle, API_KEY)
 					.then(isbn => {
-						return getBookInfo(isbn, this.settings.API_KEY)
+						return getBookInfo(isbn, API_KEY)
 					})
 					.then(data => {
 						const bookInfo = data.item[0];
