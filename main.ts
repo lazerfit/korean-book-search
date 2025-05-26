@@ -62,7 +62,10 @@ export default class KoreanBookSearchPlugin extends Plugin {
 		const ribbonIconEl = this.addRibbonIcon('book-open', '책 정보 자동 입력', (evt: MouseEvent) => {
 			const file = this.app.workspace.getActiveFile();
 			const API_KEY = this.settings.API_KEY;
-			if (!API_KEY) return;
+			if (!API_KEY) {
+				new Notice('❌ API Key가 설정되지 않았습니다.');
+				return;
+			}
 			if (file && file.extension === 'md') {
 				const rawTitle = file.basename;
 				const cleanTitle = rawTitle.replace(/\(.*\)/gi, "").replace(/\[.*]/gi, "").replace(":", "\uFF1A").replace("?", "\uFF1F").trim();
