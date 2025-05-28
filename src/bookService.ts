@@ -13,6 +13,16 @@ const baseParams = {
 	Version: '20131101',
 }
 
+export const escapeHtml = (str: string): string => {
+	return str.replace(/[&<>"']/g, (m) => ({
+		'&': '&amp;',
+		'<': '&lt;',
+		'>': '&gt;',
+		'"': '&quot;',
+		"'": '&#39;',
+	}[m]!));
+}
+
 export const searchBook = async (title: string, ttbKey: string) => {
 	const params = new URLSearchParams({
 		ttbkey: ttbKey,

@@ -1,5 +1,5 @@
 import {App, Notice, Plugin, PluginSettingTab, Setting, TFile} from 'obsidian';
-import { searchBook, getBookInfo, buildUpdatedFrontmatterContent } from "./src/bookService";
+import { searchBook, getBookInfo, buildUpdatedFrontmatterContent, escapeHtml } from "./src/bookService";
 
 export interface BookMetadata {
 	title: string;
@@ -171,14 +171,14 @@ class KoreanBookSearchSettingTab extends PluginSettingTab {
 				.setName(`필드 ${index + 1}`)
 				.addText(text => text
 					.setPlaceholder('key')
-					.setValue(f.key)
+					.setValue(escapeHtml(f.key))
 					.onChange(async (value) => {
 						this.plugin.settings.customFields[index].key = value;
 						await this.plugin.saveSettings();
 					}))
 				.addText(text => text
 					.setPlaceholder('value')
-					.setValue(f.value)
+					.setValue(escapeHtml(f.value))
 					.onChange(async (value) => {
 						this.plugin.settings.customFields[index].value = value;
 						await this.plugin.saveSettings();
