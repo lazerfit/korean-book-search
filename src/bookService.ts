@@ -81,7 +81,11 @@ const formatFrontmatterData = (raw: BookMetadata, custom: CustomField[], toggleF
 	const enabledToggleFields : Record<string, string | number> = {};
 	toggleFields.forEach(f => {
 		if (f.enabled && f.key.trim()) {
-			enabledToggleFields[f.key.trim()] = f.value;
+			if (f.key === 'startReadDate') {
+				enabledToggleFields[f.key.trim()] = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split("T")[0];
+			} else {
+				enabledToggleFields[f.key.trim()] = f.value;
+			}
 		}
 	});
 
