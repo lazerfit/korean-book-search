@@ -42,7 +42,7 @@ const DEFAULT_SETTINGS: KoreanBookSearchSettings = {
 export default class KoreanBookSearchPlugin extends Plugin {
 	settings: KoreanBookSearchSettings;
 
-	setFrontmatterDataToFile = async(file: TFile, bookInfo: BookMetadata)=> {
+	setFrontmatterDataToFile = async (file: TFile, bookInfo: BookMetadata)=> {
 		const text = await this.app.vault.read(file);
 		const {	newContent, newPath } = buildUpdatedFrontmatterContent(text, bookInfo, this.settings.customFields, this.settings.defaultFrontmatterFields, file.path);
 
@@ -150,7 +150,7 @@ class KoreanBookSearchSettingTab extends PluginSettingTab {
 							await this.plugin.saveSettings()
 							new Notice('✅ Api key saved')
 						} catch (e) {
-							new Notice('❌ Error saving Api key');
+							new Notice('❌ Error saving api key');
 						}
 					})
 			);
