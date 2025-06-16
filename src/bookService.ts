@@ -37,7 +37,7 @@ export const searchBook = async (title: string, ttbKey: string) => {
 	const data: BookResponseData = response.json;
 
 	if (data.item.length === 0) {
-		new Notice('❌ 책을 찾을 수 없습니다.');
+		new Notice('❌ Cannot find book with the given title');
 	}
 
 	return data.item[0].isbn13 ;
@@ -81,7 +81,7 @@ const formatFrontmatterData = (raw: BookMetadata, custom: CustomField[], toggleF
 	const enabledToggleFields : Record<string, string | number> = {};
 	toggleFields.forEach(f => {
 		if (f.enabled && f.key.trim()) {
-			if (f.key === 'startReadDate') {
+			if (f.key === 'startReadDate' || f.key === 'finishReadDate') {
 				enabledToggleFields[f.key.trim()] = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split("T")[0];
 			} else {
 				enabledToggleFields[f.key.trim()] = f.value;
@@ -100,6 +100,5 @@ const formatFrontmatterData = (raw: BookMetadata, custom: CustomField[], toggleF
 		category: raw.categoryName.split(">")[1] ?? '',
 		...enabledToggleFields,
 		...custom,
-
 	}
 }

@@ -42,28 +42,39 @@ const DEFAULT_SETTINGS: KoreanBookSearchSettings = {
 export default class KoreanBookSearchPlugin extends Plugin {
 	settings: KoreanBookSearchSettings;
 
-	async setFrontmatterDataToFile(file: TFile, bookInfo: BookMetadata) {
+	setFrontmatterDataToFile = async(file: TFile, bookInfo: BookMetadata)=> {
 		const text = await this.app.vault.read(file);
 		const {	newContent, newPath } = buildUpdatedFrontmatterContent(text, bookInfo, this.settings.customFields, this.settings.defaultFrontmatterFields, file.path);
 
 		try {
 			await this.app.vault.modify(file, newContent);
 			await this.app.vault.rename(file, newPath);
-			new Notice('✅ 책 정보가 업데이트 되었습니다.');
+			new Notice('✅ Book information updated successfully');
 		} catch {
-			new Notice('❌ 책 정보 업데이트 중 오류 발생');
+			new Notice('❌ Error updating book information');
 		}
+	}
 
+	updateBookFrontmatter = async (cleanTitle: string, API_KEY: string, file: TFile) => {
+		try {
+			const isbn = await searchBook(cleanTitle, API_KEY);
+			const data = await getBookInfo(isbn, API_KEY);
+			const bookInfo = data.item[0];
+			new Notice('✍️ Updating book information...');
+			this.setFrontmatterDataToFile(file, bookInfo);
+		} catch (error) {
+			new Notice('❌ Error processing book information');
+		}
 	}
 
 	async onload() {
 		await this.loadSettings();
 
-		const ribbonIconEl = this.addRibbonIcon('book-open', '책 정보 자동 입력', (evt: MouseEvent) => {
+		const ribbonIconEl = this.addRibbonIcon('book-open', 'Automatic book information entry', (evt: MouseEvent) => {
 			const file = this.app.workspace.getActiveFile();
 			const API_KEY = this.settings.API_KEY;
 			if (!API_KEY) {
-				new Notice('❌ API Key가 설정되지 않았습니다.');
+				new Notice('❌ API key not set');
 				return;
 			}
 			if (file && file.extension === 'md') {
@@ -77,18 +88,7 @@ export default class KoreanBookSearchPlugin extends Plugin {
 						seen.add(f.key.trim());
 					}
 				});
-				searchBook(cleanTitle, API_KEY)
-					.then(isbn => {
-						return getBookInfo(isbn, API_KEY)
-					})
-					.then(data => {
-						const bookInfo = data.item[0];
-						new Notice('✍️ 책 정보 업데이트 중입니다...');
-						this.setFrontmatterDataToFile(file, bookInfo);
-					})
-					.catch(() => {
-						new Notice('❌ 책 정보 처리 중 오류 발생');
-				})
+				this.updateBookFrontmatter(cleanTitle, API_KEY, file);
 			}
 		});
 
@@ -128,12 +128,11 @@ class KoreanBookSearchSettingTab extends PluginSettingTab {
 
 	display(): void {
 		const {containerEl} = this;
-
 		containerEl.empty();
-		containerEl.createEl('h2', {text: '🚀API KEY 설정 (Aladin API Key Setup)'});
+		new Setting(containerEl).setName('🚀Aladin api key setup').setHeading();
 		new Setting(containerEl)
-			.setName('API_KEY')
-			.setDesc('aladin API Key를 입력하세요 (Enter your Aladin API key)')
+			.setName('Api key')
+			.setDesc('Enter your aladin api key')
 			.addText(text =>{
 				text.inputEl.type = 'password';
 				text.setPlaceholder('ttbkey...')
@@ -147,15 +146,19 @@ class KoreanBookSearchSettingTab extends PluginSettingTab {
 					.setCta()
 					.onClick(async () => {
 						this.plugin.settings.API_KEY = apiKeyInput;
-						await this.plugin.saveSettings()
-							.then(() => new Notice('✅ API Key가 저장되었습니다'));
+						try {
+							await this.plugin.saveSettings()
+							new Notice('✅ Api key saved')
+						} catch (e) {
+							new Notice('❌ Error saving Api key');
+						}
 					})
 			);
-		containerEl.createEl('h2', {text: '🧩 기본 필드 토글 (Default Frontmatter Fields)'});
+		new Setting(containerEl).setName('🧩 Default frontmatter fields').setHeading();
 		this.plugin.settings.defaultFrontmatterFields.forEach((f, index) => {
 			new Setting(containerEl)
-				.setName(`${f.key} 필드 포함 여부 (Include '${f.key}')`)
-				.setDesc(`${f.key} 필드를 프론트매터에 포함할지 선택 (Toggle whether to include '${f.key}' in frontmatter)`)
+				.setName(`Include '${f.key}'`)
+				.setDesc(`Toggle whether to include '${f.key}' in frontmatter`)
 				.addToggle(t => {
 					t.setValue(f.enabled)
 						.onChange(async (value) => {
@@ -164,11 +167,10 @@ class KoreanBookSearchSettingTab extends PluginSettingTab {
 						})
 				})
 		})
-		containerEl.createEl('h2', { text: '📋 커스텀 프론트매터 필드 목록 (Custom Frontmatter Fields)' });
-
+		new Setting(containerEl).setName('📋 Custom frontmatter fields').setHeading();
 		this.plugin.settings.customFields.forEach((f, index) => {
 			new Setting(containerEl)
-				.setName(`필드 ${index + 1}`)
+				.setName(`Field ${index + 1}`)
 				.addText(text => text
 					.setPlaceholder('key')
 					.setValue(escapeHtml(f.key))
@@ -185,7 +187,7 @@ class KoreanBookSearchSettingTab extends PluginSettingTab {
 					}))
 				.addExtraButton(button => {
 					button.setIcon('trash')
-						.setTooltip('필드 삭제 (Remove field)')
+						.setTooltip('Remove field')
 						.onClick(async () => {
 							this.plugin.settings.customFields.splice(index, 1);
 							await this.plugin.saveSettings();
