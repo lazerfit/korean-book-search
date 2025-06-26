@@ -133,7 +133,6 @@ class KoreanBookSearchSettingTab extends PluginSettingTab {
 	display(): void {
 		const {containerEl} = this;
 		containerEl.empty();
-		new Setting(containerEl).setName('🚀 Default setting').setHeading();
 		new Setting(containerEl)
 			.setName('API key')
 			.setDesc('Enter your aladin API key')
