@@ -43,14 +43,18 @@ export default class KoreanBookSearchPlugin extends Plugin {
 	settings: KoreanBookSearchSettings;
 
 	setFrontmatterDataToFile = async (file: TFile, bookInfo: BookMetadata)=> {
-		const text = await this.app.vault.read(file);
-		const {	newContent, newPath } = buildUpdatedFrontmatterContent(text, bookInfo, this.settings.customFields, this.settings.defaultFrontmatterFields, file.path);
+		const fileManager = this.app.fileManager;
+		const newPath  = await buildUpdatedFrontmatterContent(fileManager,file, bookInfo, this.settings.customFields, this.settings.defaultFrontmatterFields, file.path);
+
+		if (!newPath) {
+			new Notice('❌ Error building frontmatter content');
+			return;
+		}
 
 		try {
-			await this.app.vault.modify(file, newContent);
 			await this.app.vault.rename(file, newPath);
 			new Notice('✅ Book information updated successfully');
-		} catch {
+		} catch(e) {
 			new Notice('❌ Error updating book information');
 		}
 	}
@@ -61,7 +65,7 @@ export default class KoreanBookSearchPlugin extends Plugin {
 			const data = await getBookInfo(isbn, API_KEY);
 			const bookInfo = data.item[0];
 			new Notice('✍️ Updating book information...');
-			this.setFrontmatterDataToFile(file, bookInfo);
+			await this.setFrontmatterDataToFile(file, bookInfo);
 		} catch (error) {
 			new Notice('❌ Error processing book information');
 		}
@@ -129,10 +133,10 @@ class KoreanBookSearchSettingTab extends PluginSettingTab {
 	display(): void {
 		const {containerEl} = this;
 		containerEl.empty();
-		new Setting(containerEl).setName('🚀Aladin api key setup').setHeading();
+		new Setting(containerEl).setName('🚀 Default setting').setHeading();
 		new Setting(containerEl)
-			.setName('Api key')
-			.setDesc('Enter your aladin api key')
+			.setName('API key')
+			.setDesc('Enter your aladin API key')
 			.addText(text =>{
 				text.inputEl.type = 'password';
 				text.setPlaceholder('ttbkey...')
@@ -148,13 +152,12 @@ class KoreanBookSearchSettingTab extends PluginSettingTab {
 						this.plugin.settings.API_KEY = apiKeyInput;
 						try {
 							await this.plugin.saveSettings()
-							new Notice('✅ Api key saved')
+							new Notice('✅ API key saved')
 						} catch (e) {
-							new Notice('❌ Error saving api key');
+							new Notice('❌ Error saving API key');
 						}
 					})
 			);
-		new Setting(containerEl).setName('🧩 Default frontmatter fields').setHeading();
 		this.plugin.settings.defaultFrontmatterFields.forEach((f, index) => {
 			new Setting(containerEl)
 				.setName(`Include '${f.key}'`)

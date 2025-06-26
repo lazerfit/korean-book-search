@@ -1,4 +1,4 @@
-import {normalizePath, Notice, requestUrl, stringifyYaml} from "obsidian";
+import {FileManager, normalizePath, Notice, requestUrl, stringifyYaml, TFile} from "obsidian";
 import {BookMetadata, CustomField, ToggleField} from "../main";
 
 interface BookResponseData {
@@ -57,48 +57,38 @@ export const getBookInfo = async (isbn: string, ttbKey: string) => {
 	return data;
 }
 
-export const buildUpdatedFrontmatterContent =  (content: string, bookInfo: BookMetadata, custom: CustomField[], toggleFields: ToggleField[], path: string) => {
-	const fronmatterData = formatFrontmatterData(bookInfo, custom, toggleFields);
-	const yaml = stringifyYaml(fronmatterData);
-	const fullYaml = `---\n${yaml}---\n`;
+export const buildUpdatedFrontmatterContent =  async (fileManager: FileManager,file: TFile, bookInfo: BookMetadata, custom: CustomField[], toggleFields: ToggleField[], path: string) => {
+	try {
+		await fileManager.processFrontMatter(file,(frontmatter) => {
+			frontmatter['tags'] = bookInfo.categoryName.split('>') ?? [];
+			frontmatter['title'] = bookInfo.title;
+			frontmatter['author'] = bookInfo.author;
+			frontmatter['publisher'] = bookInfo.publisher;
+			frontmatter['pubDate'] = bookInfo.pubDate;
+			frontmatter['isbn'] = bookInfo.isbn13;
+			frontmatter['cover'] = bookInfo.cover;
+			frontmatter['category'] = bookInfo.categoryName.split(">")[1] ?? '';
+			toggleFields.forEach((toggle) => {
+				if (toggle.enabled && toggle.key.trim()) {
+					if (toggle.key === 'startReadDate' || toggle.key === 'finishReadDate') {
+						frontmatter[toggle.key.trim()] = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split("T")[0];
+					} else {
+						frontmatter[toggle.key.trim()] = toggle.value;
+					}
+				}
+			})
+			custom.forEach((item) => {
+				if (item.key.trim()) {
+					frontmatter[item.key.trim()] = item.value;
+				}
+			})
+		});
+		const folderPath = path.substring(0, path.lastIndexOf("/"));
+		const safeTitle = bookInfo.title.replace(/[\/:*?"<>|]/g, "_");
+		const newPath = normalizePath(`${folderPath}/${safeTitle}.md`);
 
-	const hasFrontmatter = /^---\n[\s\S]*?\n---/.test(content);
-	const newContent = hasFrontmatter
-		? content.replace(/^---\n[\s\S]*?\n---/, fullYaml)
-		: fullYaml + content;
-
-	const folderPath = path.substring(0, path.lastIndexOf("/"));
-	const safeTitle = bookInfo.title.replace(/[\/:*?"<>|]/g, "_");
-	const newPath = normalizePath(`${folderPath}/${safeTitle}.md`);
-
-	return {
-		newContent,
-		newPath,
-	}
-}
-
-const formatFrontmatterData = (raw: BookMetadata, custom: CustomField[], toggleFields: ToggleField[]) => {
-	const enabledToggleFields : Record<string, string | number> = {};
-	toggleFields.forEach(f => {
-		if (f.enabled && f.key.trim()) {
-			if (f.key === 'startReadDate' || f.key === 'finishReadDate') {
-				enabledToggleFields[f.key.trim()] = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split("T")[0];
-			} else {
-				enabledToggleFields[f.key.trim()] = f.value;
-			}
-		}
-	});
-
-	return {
-		tags: raw.categoryName.split(">") ?? [],
-		title: raw.title,
-		author: raw.author,
-		publisher: raw.publisher,
-		pubDate: raw.pubDate,
-		isbn: raw.isbn13,
-		cover: raw.cover,
-		category: raw.categoryName.split(">")[1] ?? '',
-		...enabledToggleFields,
-		...custom,
+		return newPath;
+	} catch (error) {
+		new Notice('❌ Error processing frontmatter');
 	}
 }
