@@ -5,6 +5,14 @@ It uses the [Aladin Open API](https://blog.aladin.co.kr/openapi/popup/6695306) t
 
 ---
 
+## 🚀 New Features
+
+- v1.1.0:
+  - Added split subtitle and subtitle into separate fields
+  - Add Korean language support for UI localization
+
+---
+
 ## 📚 Features
 
 - 📖 Automatically fetch book data using Aladin Open API
