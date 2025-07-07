@@ -1,5 +1,6 @@
 import {FileManager, normalizePath, Notice, requestUrl, TFile} from "obsidian";
 import {BookMetadata, CustomField, ToggleField} from "../main";
+import {getLocaleMessage, type LocaleMessages} from './localeService';
 
 interface BookResponseData {
 	item: BookMetadata[];
@@ -38,13 +39,13 @@ export const searchBook = async (title: string, ttbKey: string) => {
 		const data: BookResponseData = response.json;
 
 		if (data.item.length === 0) {
-			new Notice('❌ Cannot find book with the given title');
+			new Notice(getLocaleMessage('SearchBookTitleError'));
 			return null;
 		}
 
 		return data.item[0].isbn13 ;
 	} catch {
-		new Notice('❌ Error searching for book');
+		new Notice(getLocaleMessage('SearchBookError'));
 		return null;
 	}
 }
@@ -62,13 +63,13 @@ export const getBookInfo = async (isbn: string, ttbKey: string) => {
 		const data: BookResponseData = response.json;
 
 		if (data.item.length === 0) {
-			new Notice('❌ Cannot find book with the given title');
+			new Notice(getLocaleMessage('SearchBookTitleError'));
 			return null;
 		}
 
 		return data;
 	} catch {
-		new Notice('❌ Error fetching book information');
+		new Notice(getLocaleMessage('SearchBookFetchingError'));
 		return null;
 	}
 }
@@ -109,7 +110,7 @@ export const buildUpdatedFrontmatterContent =  async (fileManager: FileManager,f
 		const safeTitle = shouldSplitSubTitle ? setSafeTitle(mainTitle.trim()) : setSafeTitle(bookInfo.title);
 		return normalizePath(`${folderPath}/${safeTitle}.md`);
 	} catch (error) {
-		new Notice('❌ Error processing frontmatter');
+		new Notice(getLocaleMessage('updateFrontmatterError'));
 	}
 }
 

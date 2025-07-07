@@ -1,5 +1,6 @@
 import {App, Notice, Plugin, PluginSettingTab, Setting, TFile} from 'obsidian';
 import { searchBook, getBookInfo, buildUpdatedFrontmatterContent, escapeHtml } from "./src/bookService";
+import {getLocaleMessage, type LocaleMessages} from './src/localeService';
 
 export interface BookMetadata {
 	title: string;
@@ -49,15 +50,15 @@ export default class KoreanBookSearchPlugin extends Plugin {
 		const newPath  = await buildUpdatedFrontmatterContent(fileManager,file, bookInfo, this.settings.customFields, this.settings.defaultFrontmatterFields, this.settings.splitSubTitle,file.path);
 
 		if (!newPath) {
-			new Notice('❌ Error building frontmatter content');
+			new Notice(getLocaleMessage('updateFrontmatterError'));
 			return;
 		}
 
 		try {
 			await this.app.vault.rename(file, newPath);
-			new Notice('✅ Book information updated successfully');
+			new Notice(getLocaleMessage('updateBookInfoSuccess'));
 		} catch(e) {
-			new Notice('❌ Error updating book information');
+			new Notice(getLocaleMessage('updateBookInfoError'));
 		}
 	}
 
@@ -68,10 +69,10 @@ export default class KoreanBookSearchPlugin extends Plugin {
 			const data = await getBookInfo(isbn, API_KEY);
 			if (!data) return;
 			const bookInfo = data.item[0];
-			new Notice('✍️ Updating book information...');
+			new Notice(getLocaleMessage('updateBookInfoProcessing'));
 			await this.setFrontmatterDataToFile(file, bookInfo);
 		} catch (error) {
-			new Notice('❌ Error processing book information');
+			new Notice(getLocaleMessage('updateBookInfoProcessingError'));
 		}
 	}
 
@@ -82,7 +83,7 @@ export default class KoreanBookSearchPlugin extends Plugin {
 			const file = this.app.workspace.getActiveFile();
 			const API_KEY = this.settings.API_KEY;
 			if (!API_KEY) {
-				new Notice('❌ API key not set');
+				new Notice(getLocaleMessage('APIKeyNotSet'));
 				return;
 			}
 			if (file && file.extension === 'md') {
@@ -139,7 +140,7 @@ class KoreanBookSearchSettingTab extends PluginSettingTab {
 		containerEl.empty();
 		new Setting(containerEl)
 			.setName('API key')
-			.setDesc('Enter your aladin API key')
+			.setDesc(getLocaleMessage('APIKeyEnter'))
 			.addText(text =>{
 				text.inputEl.type = 'password';
 				text.setPlaceholder('ttbkey...')
@@ -155,16 +156,16 @@ class KoreanBookSearchSettingTab extends PluginSettingTab {
 						this.plugin.settings.API_KEY = apiKeyInput;
 						try {
 							await this.plugin.saveSettings()
-							new Notice('✅ API key saved')
+							new Notice(getLocaleMessage('APIkeySaved'))
 						} catch (e) {
-							new Notice('❌ Error saving API key');
+							new Notice(getLocaleMessage('APIkeyError'));
 						}
 					})
 			);
 		this.plugin.settings.defaultFrontmatterFields.forEach((f, index) => {
 			new Setting(containerEl)
-				.setName(`Include '${f.key}'`)
-				.setDesc(`Toggle whether to include '${f.key}' in frontmatter`)
+				.setName(getLocaleMessage(`include_${f.key}` as keyof LocaleMessages))
+				.setDesc(getLocaleMessage(`include_${f.key}` as keyof LocaleMessages, true))
 				.addToggle(t => {
 					t.setValue(f.enabled)
 						.onChange(async (value) => {
@@ -174,8 +175,8 @@ class KoreanBookSearchSettingTab extends PluginSettingTab {
 				})
 		})
 		new Setting(containerEl)
-			.setName('Split subtitle')
-			.setDesc('Toggle whether to split subtitle from title')
+			.setName(getLocaleMessage('splitSubTitle'))
+			.setDesc(getLocaleMessage('splitSubTitle',true))
 			.addToggle(t => {
 				t.setValue(this.plugin.settings.splitSubTitle)
 					.onChange(async (value) => {
@@ -183,7 +184,7 @@ class KoreanBookSearchSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					});
 			})
-		new Setting(containerEl).setName('📋 Custom frontmatter fields').setHeading();
+		new Setting(containerEl).setName(getLocaleMessage('customFrontmatter')).setHeading();
 		this.plugin.settings.customFields.forEach((f, index) => {
 			new Setting(containerEl)
 				.setName(`Field ${index + 1}`)
