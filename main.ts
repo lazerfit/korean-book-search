@@ -26,6 +26,7 @@ interface KoreanBookSearchSettings {
 	API_KEY: string;
 	customFields: CustomField[];
 	defaultFrontmatterFields: ToggleField[];
+	splitSubTitle: boolean;
 }
 
 const DEFAULT_SETTINGS: KoreanBookSearchSettings = {
@@ -37,6 +38,7 @@ const DEFAULT_SETTINGS: KoreanBookSearchSettings = {
 		{key: 'startReadDate', value: new Date().toISOString().split("T")[0], enabled: true},
 		{key: 'finishReadDate', value: new Date().toISOString().split("T")[0], enabled: false},
 	],
+	splitSubTitle: true,
 }
 
 export default class KoreanBookSearchPlugin extends Plugin {
@@ -44,7 +46,7 @@ export default class KoreanBookSearchPlugin extends Plugin {
 
 	setFrontmatterDataToFile = async (file: TFile, bookInfo: BookMetadata)=> {
 		const fileManager = this.app.fileManager;
-		const newPath  = await buildUpdatedFrontmatterContent(fileManager,file, bookInfo, this.settings.customFields, this.settings.defaultFrontmatterFields, file.path);
+		const newPath  = await buildUpdatedFrontmatterContent(fileManager,file, bookInfo, this.settings.customFields, this.settings.defaultFrontmatterFields, this.settings.splitSubTitle,file.path);
 
 		if (!newPath) {
 			new Notice('❌ Error building frontmatter content');
@@ -62,7 +64,9 @@ export default class KoreanBookSearchPlugin extends Plugin {
 	updateBookFrontmatter = async (cleanTitle: string, API_KEY: string, file: TFile) => {
 		try {
 			const isbn = await searchBook(cleanTitle, API_KEY);
+			if (!isbn) return;
 			const data = await getBookInfo(isbn, API_KEY);
+			if (!data) return;
 			const bookInfo = data.item[0];
 			new Notice('✍️ Updating book information...');
 			await this.setFrontmatterDataToFile(file, bookInfo);
@@ -169,6 +173,16 @@ class KoreanBookSearchSettingTab extends PluginSettingTab {
 						})
 				})
 		})
+		new Setting(containerEl)
+			.setName('Split subtitle')
+			.setDesc('Toggle whether to split subtitle from title')
+			.addToggle(t => {
+				t.setValue(this.plugin.settings.splitSubTitle)
+					.onChange(async (value) => {
+						this.plugin.settings.splitSubTitle = value;
+						await this.plugin.saveSettings();
+					});
+			})
 		new Setting(containerEl).setName('📋 Custom frontmatter fields').setHeading();
 		this.plugin.settings.customFields.forEach((f, index) => {
 			new Setting(containerEl)

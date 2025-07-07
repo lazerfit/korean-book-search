@@ -1,4 +1,4 @@
-import {FileManager, normalizePath, Notice, requestUrl, stringifyYaml, TFile} from "obsidian";
+import {FileManager, normalizePath, Notice, requestUrl, TFile} from "obsidian";
 import {BookMetadata, CustomField, ToggleField} from "../main";
 
 interface BookResponseData {
@@ -24,44 +24,66 @@ export const escapeHtml = (str: string): string => {
 }
 
 export const searchBook = async (title: string, ttbKey: string) => {
-	const params = new URLSearchParams({
-		ttbkey: ttbKey,
-		Query: title,
-		QueryType: 'Title',
-		MaxResults: '1',
-		...baseParams,
-	});
-	const searchUrl = `${itemSearchUrl}?${params.toString()}`;
+	try {
+		const params = new URLSearchParams({
+			ttbkey: ttbKey,
+			Query: title,
+			QueryType: 'Title',
+			MaxResults: '1',
+			...baseParams,
+		});
+		const searchUrl = `${itemSearchUrl}?${params.toString()}`;
 
-	const response = await requestUrl({ url: searchUrl });
-	const data: BookResponseData = response.json;
+		const response = await requestUrl({ url: searchUrl });
+		const data: BookResponseData = response.json;
 
-	if (data.item.length === 0) {
-		new Notice('❌ Cannot find book with the given title');
+		if (data.item.length === 0) {
+			new Notice('❌ Cannot find book with the given title');
+			return null;
+		}
+
+		return data.item[0].isbn13 ;
+	} catch {
+		new Notice('❌ Error searching for book');
+		return null;
 	}
-
-	return data.item[0].isbn13 ;
 }
 
 export const getBookInfo = async (isbn: string, ttbKey: string) => {
-	const params = new URLSearchParams({
-		ttbkey: ttbKey,
-		ItemId: isbn,
-		...baseParams,
-	});
-	const lookupUrl = `${itemLookupUrl}?${params.toString()}`;
+	try {
+		const params = new URLSearchParams({
+			ttbkey: ttbKey,
+			ItemId: isbn,
+			...baseParams,
+		});
+		const lookupUrl = `${itemLookupUrl}?${params.toString()}`;
 
-	const response = await requestUrl({ url: lookupUrl });
-	const data: BookResponseData = response.json;
+		const response = await requestUrl({ url: lookupUrl });
+		const data: BookResponseData = response.json;
 
-	return data;
+		if (data.item.length === 0) {
+			new Notice('❌ Cannot find book with the given title');
+			return null;
+		}
+
+		return data;
+	} catch {
+		new Notice('❌ Error fetching book information');
+		return null;
+	}
 }
 
-export const buildUpdatedFrontmatterContent =  async (fileManager: FileManager,file: TFile, bookInfo: BookMetadata, custom: CustomField[], toggleFields: ToggleField[], path: string) => {
+export const buildUpdatedFrontmatterContent =  async (fileManager: FileManager,file: TFile, bookInfo: BookMetadata, custom: CustomField[], toggleFields: ToggleField[],shouldSplitSubTitle: boolean, path: string) => {
 	try {
+		const [mainTitle, subTitle] = bookInfo.title.split("-");
 		await fileManager.processFrontMatter(file,(frontmatter) => {
 			frontmatter['tags'] = bookInfo.categoryName.split('>') ?? [];
-			frontmatter['title'] = bookInfo.title;
+			if (shouldSplitSubTitle && bookInfo.title.split("-").length > 1) {
+				frontmatter['title'] = mainTitle.trim();
+				frontmatter['subTitle'] = subTitle.trim();
+			} else {
+				frontmatter['title'] = bookInfo.title;
+			}
 			frontmatter['author'] = bookInfo.author;
 			frontmatter['publisher'] = bookInfo.publisher;
 			frontmatter['pubDate'] = bookInfo.pubDate;
@@ -84,11 +106,13 @@ export const buildUpdatedFrontmatterContent =  async (fileManager: FileManager,f
 			})
 		});
 		const folderPath = path.substring(0, path.lastIndexOf("/"));
-		const safeTitle = bookInfo.title.replace(/[\/:*?"<>|]/g, "_");
-		const newPath = normalizePath(`${folderPath}/${safeTitle}.md`);
-
-		return newPath;
+		const safeTitle = shouldSplitSubTitle ? setSafeTitle(mainTitle.trim()) : setSafeTitle(bookInfo.title);
+		return normalizePath(`${folderPath}/${safeTitle}.md`);
 	} catch (error) {
 		new Notice('❌ Error processing frontmatter');
 	}
+}
+
+const setSafeTitle = (title: string): string => {
+	return title.replace(/[\/:*?"<>|]/g, "_");
 }
