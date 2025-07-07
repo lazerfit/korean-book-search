@@ -16,20 +16,20 @@ export const koMessages = {
 		"description": ""
 	},
 	"include_myRate": {
-		"message": "'myRate' 포함하기",
+		"message": "myRate 포함하기",
 		"description": "책에 대한 개인 평점을 포함합니다."
 	},
 	"include_status": {
-		"message": "'status' 포함하기",
+		"message": "status 포함하기",
 		"description": "책의 읽기 상태를 포함합니다."
 	},
 	"include_startReadDate": {
-		"message": "'startReadDate' 포함하기",
+		"message": "startReadDate 포함하기",
 		"description": "책을 읽기 시작한 날짜를 포함합니다."
 	},
 	"include_finishReadDate": {
-		"message": "'finishReadDate' 포함하기",
-		"description": "책을 읽은 날짜를 포함합니다."
+		"message": "finishReadDate 포함하기",
+		"description": "책을 다 읽은 날짜를 포함합니다."
 	},
 	"splitSubTitle": {
 		"message" : "부제목 분리하기",
