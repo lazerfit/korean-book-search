@@ -86,4 +86,4 @@ MIT
 
 ---
 
-[🇰🇷 한국어 안내 보기](./README.ko.md)
+[🇰🇷 한국어 안내 보기](https://11oz.tistory.com/m/entry/Obsidian-plugin-%EC%98%B5%EC%8B%9C%EB%94%94%EC%96%B8-%EB%8F%84%EC%84%9C-%EC%A0%95%EB%B3%B4-%EC%9E%90%EB%8F%99-%EC%9E%85%EB%A0%A5%EA%B8%B0-Korean-Book-Search)
