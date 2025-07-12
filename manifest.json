@@ -1,7 +1,7 @@
 {
 	"id": "korean-book-search",
 	"name": "Korean Book Search",
-	"version": "1.1.1",
+	"version": "1.2.0",
 	"minAppVersion": "1.8.10",
 	"description": "Automatically fills in YAML frontmatter with Korean book information from Aladin API based on the note title.",
 	"author": "lazerfit",

@@ -76,30 +76,42 @@ export default class KoreanBookSearchPlugin extends Plugin {
 		}
 	}
 
+	handleBookInfoEntry = async () => {
+		const file = this.app.workspace.getActiveFile();
+		const API_KEY = this.settings.API_KEY;
+		if (!API_KEY) {
+			new Notice(getLocaleMessage('APIKeyNotSet'));
+			return;
+		}
+		if (file && file.extension === 'md') {
+			const rawTitle = file.basename;
+			const cleanTitle = rawTitle.replace(/\(.*\)/gi, "").replace(/\[.*]/gi, "").replace(":", "\uFF1A").replace("?", "\uFF1F").trim();
+			const custom: Record<string, string> = {};
+			const seen = new Set<string>();
+			this.settings.customFields.forEach(f => {
+				if (!seen.has(f.key.trim())) {
+					custom[f.key.trim()] = f.value;
+					seen.add(f.key.trim());
+				}
+			});
+			await this.updateBookFrontmatter(cleanTitle, API_KEY, file);
+		}
+	}
+
 	async onload() {
 		await this.loadSettings();
 
-		const ribbonIconEl = this.addRibbonIcon('book-open', 'Automatic book information entry', (evt: MouseEvent) => {
-			const file = this.app.workspace.getActiveFile();
-			const API_KEY = this.settings.API_KEY;
-			if (!API_KEY) {
-				new Notice(getLocaleMessage('APIKeyNotSet'));
-				return;
-			}
-			if (file && file.extension === 'md') {
-				const rawTitle = file.basename;
-				const cleanTitle = rawTitle.replace(/\(.*\)/gi, "").replace(/\[.*]/gi, "").replace(":", "\uFF1A").replace("?", "\uFF1F").trim();
-				const custom: Record<string, string> = {};
-				const seen = new Set<string>();
-				this.settings.customFields.forEach(f => {
-					if (!seen.has(f.key.trim())) {
-						custom[f.key.trim()] = f.value;
-						seen.add(f.key.trim());
-					}
-				});
-				this.updateBookFrontmatter(cleanTitle, API_KEY, file);
-			}
+		const ribbonIconEl = this.addRibbonIcon('book-open', 'Automatic book information entry', async (evt: MouseEvent) => {
+			await this.handleBookInfoEntry();
 		});
+
+		this.addCommand({
+			id: 'korean-book-search-update-frontmatter',
+			name: 'Update book frontmatter',
+			callback: async () => {
+				await this.handleBookInfoEntry();
+			}
+		})
 
 		ribbonIconEl.addClass('korean-book-search-ribbon-class');
 
