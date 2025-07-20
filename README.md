@@ -51,7 +51,7 @@ It uses the [Aladin Open API](https://blog.aladin.co.kr/openapi/popup/6695306) t
 
 ## 🚀 Usage
 
-1. Create a new note with the title of a book (e.g. `미움받을 용기`)
+1. Create a new note with the title of a book (e.g. `소년이 온다`)
 2. Click the book icon 📖 in the left ribbon
 3. The plugin will:
 	- Query the book via Aladin API
@@ -65,16 +65,19 @@ It uses the [Aladin Open API](https://blog.aladin.co.kr/openapi/popup/6695306) t
 
 ```yaml
 ---
-title: 미움받을 용기
-author: 기시미 이치로, 고가 후미타케
-publisher: 인플루엔셜
-pubDate: 2014-11-07
-isbn: 9788996991342
+title: 소년이 온다
+subTitle: 2024 노벨문학상 수상작가
+author: 한강 (지은이)
+publisher: 창비
+pages: 216
+pubDate: 2014-05-19
+isbn: 9788936434120
 cover: https://image.aladin.co.kr/...
-category: 자기계발
-myRate: 4.5
+category: 소설/시/희곡
+myRate: 5
 status: 읽는 중
 startReadDate: 2025-05-13
+finishReadDate: 2025-05-13
 ---
 ```
 
