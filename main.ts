@@ -1,6 +1,6 @@
-import {App, Notice, Plugin, PluginSettingTab, Setting, TFile} from 'obsidian';
-import { searchBook, getBookInfo, buildUpdatedFrontmatterContent, escapeHtml } from "./src/bookService";
-import {getLocaleMessage, type LocaleMessages} from './src/localeService';
+import { App, Notice, Plugin, PluginSettingTab, Setting, TFile } from 'obsidian';
+import { searchBook, getBookInfo, buildUpdatedFrontmatterContent, escapeHtml } from './src/bookService';
+import { getLocaleMessage, type LocaleMessages } from './src/localeService';
 
 export interface BookMetadata {
 	title: string;
@@ -10,6 +10,11 @@ export interface BookMetadata {
 	cover: string;
 	categoryName: string;
 	publisher: string;
+	subInfo: SubInfo;
+}
+
+interface SubInfo {
+	itemPage: number;
 }
 
 export interface CustomField {
@@ -34,20 +39,28 @@ const DEFAULT_SETTINGS: KoreanBookSearchSettings = {
 	API_KEY: '',
 	customFields: [],
 	defaultFrontmatterFields: [
-		{key: 'myRate', value: 0, enabled: true},
-		{key: 'status', value: '읽는 중', enabled: true},
-		{key: 'startReadDate', value: new Date().toISOString().split("T")[0], enabled: true},
-		{key: 'finishReadDate', value: new Date().toISOString().split("T")[0], enabled: false},
+		{ key: 'myRate', value: 0, enabled: true },
+		{ key: 'status', value: '읽는 중', enabled: true },
+		{ key: 'startReadDate', value: new Date().toISOString().split('T')[0], enabled: true },
+		{ key: 'finishReadDate', value: new Date().toISOString().split('T')[0], enabled: false },
 	],
 	splitSubTitle: true,
-}
+};
 
 export default class KoreanBookSearchPlugin extends Plugin {
 	settings: KoreanBookSearchSettings;
 
-	setFrontmatterDataToFile = async (file: TFile, bookInfo: BookMetadata)=> {
+	setFrontmatterDataToFile = async (file: TFile, bookInfo: BookMetadata) => {
 		const fileManager = this.app.fileManager;
-		const newPath  = await buildUpdatedFrontmatterContent(fileManager,file, bookInfo, this.settings.customFields, this.settings.defaultFrontmatterFields, this.settings.splitSubTitle,file.path);
+		const newPath = await buildUpdatedFrontmatterContent(
+			fileManager,
+			file,
+			bookInfo,
+			this.settings.customFields,
+			this.settings.defaultFrontmatterFields,
+			this.settings.splitSubTitle,
+			file.path,
+		);
 
 		if (!newPath) {
 			new Notice(getLocaleMessage('updateFrontmatterError'));
@@ -57,10 +70,10 @@ export default class KoreanBookSearchPlugin extends Plugin {
 		try {
 			await this.app.vault.rename(file, newPath);
 			new Notice(getLocaleMessage('updateBookInfoSuccess'));
-		} catch(e) {
+		} catch (e) {
 			new Notice(getLocaleMessage('updateBookInfoError'));
 		}
-	}
+	};
 
 	updateBookFrontmatter = async (cleanTitle: string, API_KEY: string, file: TFile) => {
 		try {
@@ -74,7 +87,7 @@ export default class KoreanBookSearchPlugin extends Plugin {
 		} catch (error) {
 			new Notice(getLocaleMessage('updateBookInfoProcessingError'));
 		}
-	}
+	};
 
 	handleBookInfoEntry = async () => {
 		const file = this.app.workspace.getActiveFile();
@@ -85,7 +98,12 @@ export default class KoreanBookSearchPlugin extends Plugin {
 		}
 		if (file && file.extension === 'md') {
 			const rawTitle = file.basename;
-			const cleanTitle = rawTitle.replace(/\(.*\)/gi, "").replace(/\[.*]/gi, "").replace(":", "\uFF1A").replace("?", "\uFF1F").trim();
+			const cleanTitle = rawTitle
+				.replace(/\(.*\)/gi, '')
+				.replace(/\[.*]/gi, '')
+				.replace(':', '\uFF1A')
+				.replace('?', '\uFF1F')
+				.trim();
 			const custom: Record<string, string> = {};
 			const seen = new Set<string>();
 			this.settings.customFields.forEach(f => {
@@ -96,31 +114,33 @@ export default class KoreanBookSearchPlugin extends Plugin {
 			});
 			await this.updateBookFrontmatter(cleanTitle, API_KEY, file);
 		}
-	}
+	};
 
 	async onload() {
 		await this.loadSettings();
 
-		const ribbonIconEl = this.addRibbonIcon('book-open', 'Automatic book information entry', async (evt: MouseEvent) => {
-			await this.handleBookInfoEntry();
-		});
+		const ribbonIconEl = this.addRibbonIcon(
+			'book-open',
+			'Automatic book information entry',
+			async (evt: MouseEvent) => {
+				await this.handleBookInfoEntry();
+			},
+		);
 
 		this.addCommand({
 			id: 'korean-book-search-update-frontmatter',
 			name: 'Update book frontmatter',
 			callback: async () => {
 				await this.handleBookInfoEntry();
-			}
-		})
+			},
+		});
 
 		ribbonIconEl.addClass('korean-book-search-ribbon-class');
 
 		this.addSettingTab(new KoreanBookSearchSettingTab(this.app, this));
 	}
 
-	onunload() {
-
-	}
+	onunload() {}
 
 	async loadSettings() {
 		const loaded = await this.loadData();
@@ -148,18 +168,19 @@ class KoreanBookSearchSettingTab extends PluginSettingTab {
 	}
 
 	display(): void {
-		const {containerEl} = this;
+		const { containerEl } = this;
 		containerEl.empty();
 		new Setting(containerEl)
 			.setName('API key')
 			.setDesc(getLocaleMessage('APIKeyEnter'))
-			.addText(text =>{
+			.addText(text => {
 				text.inputEl.type = 'password';
 				text.setPlaceholder('ttbkey...')
-				.setValue(this.plugin.settings.API_KEY)
-				.onChange(async (value) => {
-					apiKeyInput = value;
-				})})
+					.setValue(this.plugin.settings.API_KEY)
+					.onChange(async value => {
+						apiKeyInput = value;
+					});
+			})
 			.addButton(btn =>
 				btn
 					.setButtonText('save')
@@ -167,55 +188,58 @@ class KoreanBookSearchSettingTab extends PluginSettingTab {
 					.onClick(async () => {
 						this.plugin.settings.API_KEY = apiKeyInput;
 						try {
-							await this.plugin.saveSettings()
-							new Notice(getLocaleMessage('APIkeySaved'))
+							await this.plugin.saveSettings();
+							new Notice(getLocaleMessage('APIkeySaved'));
 						} catch (e) {
 							new Notice(getLocaleMessage('APIkeyError'));
 						}
-					})
+					}),
 			);
 		this.plugin.settings.defaultFrontmatterFields.forEach((f, index) => {
 			new Setting(containerEl)
 				.setName(getLocaleMessage(`include_${f.key}` as keyof LocaleMessages))
 				.setDesc(getLocaleMessage(`include_${f.key}` as keyof LocaleMessages, true))
 				.addToggle(t => {
-					t.setValue(f.enabled)
-						.onChange(async (value) => {
-							this.plugin.settings.defaultFrontmatterFields[index].enabled = value;
-							await this.plugin.saveSettings();
-						})
-				})
-		})
-		new Setting(containerEl)
-			.setName(getLocaleMessage('splitSubTitle'))
-			.setDesc(getLocaleMessage('splitSubTitle',true))
-			.addToggle(t => {
-				t.setValue(this.plugin.settings.splitSubTitle)
-					.onChange(async (value) => {
-						this.plugin.settings.splitSubTitle = value;
+					t.setValue(f.enabled).onChange(async value => {
+						this.plugin.settings.defaultFrontmatterFields[index].enabled = value;
 						await this.plugin.saveSettings();
 					});
-			})
+				});
+		});
+		new Setting(containerEl)
+			.setName(getLocaleMessage('splitSubTitle'))
+			.setDesc(getLocaleMessage('splitSubTitle', true))
+			.addToggle(t => {
+				t.setValue(this.plugin.settings.splitSubTitle).onChange(async value => {
+					this.plugin.settings.splitSubTitle = value;
+					await this.plugin.saveSettings();
+				});
+			});
 		new Setting(containerEl).setName(getLocaleMessage('customFrontmatter')).setHeading();
 		this.plugin.settings.customFields.forEach((f, index) => {
 			new Setting(containerEl)
 				.setName(`Field ${index + 1}`)
-				.addText(text => text
-					.setPlaceholder('key')
-					.setValue(escapeHtml(f.key))
-					.onChange(async (value) => {
-						this.plugin.settings.customFields[index].key = value;
-						await this.plugin.saveSettings();
-					}))
-				.addText(text => text
-					.setPlaceholder('value')
-					.setValue(escapeHtml(f.value))
-					.onChange(async (value) => {
-						this.plugin.settings.customFields[index].value = value;
-						await this.plugin.saveSettings();
-					}))
+				.addText(text =>
+					text
+						.setPlaceholder('key')
+						.setValue(escapeHtml(f.key))
+						.onChange(async value => {
+							this.plugin.settings.customFields[index].key = value;
+							await this.plugin.saveSettings();
+						}),
+				)
+				.addText(text =>
+					text
+						.setPlaceholder('value')
+						.setValue(escapeHtml(f.value))
+						.onChange(async value => {
+							this.plugin.settings.customFields[index].value = value;
+							await this.plugin.saveSettings();
+						}),
+				)
 				.addExtraButton(button => {
-					button.setIcon('trash')
+					button
+						.setIcon('trash')
 						.setTooltip('Remove field')
 						.onClick(async () => {
 							this.plugin.settings.customFields.splice(index, 1);
@@ -224,14 +248,12 @@ class KoreanBookSearchSettingTab extends PluginSettingTab {
 						});
 				});
 		});
-		new Setting(containerEl)
-			.addButton(button => {
-				button.setButtonText('➕ Add')
-					.onClick(async () => {
-						this.plugin.settings.customFields.push({ key: '', value: '' });
-						await this.plugin.saveSettings();
-						this.display();
-					});
+		new Setting(containerEl).addButton(button => {
+			button.setButtonText('➕ Add').onClick(async () => {
+				this.plugin.settings.customFields.push({ key: '', value: '' });
+				await this.plugin.saveSettings();
+				this.display();
 			});
+		});
 	}
 }

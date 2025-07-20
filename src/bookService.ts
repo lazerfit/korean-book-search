@@ -1,6 +1,6 @@
-import {FileManager, normalizePath, Notice, requestUrl, TFile} from "obsidian";
-import {BookMetadata, CustomField, ToggleField} from "../main";
-import {getLocaleMessage, type LocaleMessages} from './localeService';
+import { FileManager, normalizePath, Notice, requestUrl, TFile } from 'obsidian';
+import { BookMetadata, CustomField, ToggleField } from '../main';
+import { getLocaleMessage } from './localeService';
 
 interface BookResponseData {
 	item: BookMetadata[];
@@ -12,17 +12,21 @@ const itemLookupUrl = 'http://www.aladin.co.kr/ttb/api/ItemLookUp.aspx';
 const baseParams = {
 	Output: 'JS',
 	Version: '20131101',
-}
+};
 
 export const escapeHtml = (str: string): string => {
-	return str.replace(/[&<>"']/g, (m) => ({
-		'&': '&amp;',
-		'<': '&lt;',
-		'>': '&gt;',
-		'"': '&quot;',
-		"'": '&#39;',
-	}[m]!));
-}
+	return str.replace(
+		/[&<>"']/g,
+		m =>
+			({
+				'&': '&amp;',
+				'<': '&lt;',
+				'>': '&gt;',
+				'"': '&quot;',
+				"'": '&#39;',
+			})[m]!,
+	);
+};
 
 export const searchBook = async (title: string, ttbKey: string) => {
 	try {
@@ -43,12 +47,12 @@ export const searchBook = async (title: string, ttbKey: string) => {
 			return null;
 		}
 
-		return data.item[0].isbn13 ;
+		return data.item[0].isbn13;
 	} catch {
 		new Notice(getLocaleMessage('SearchBookError'));
 		return null;
 	}
-}
+};
 
 export const getBookInfo = async (isbn: string, ttbKey: string) => {
 	try {
@@ -72,14 +76,22 @@ export const getBookInfo = async (isbn: string, ttbKey: string) => {
 		new Notice(getLocaleMessage('SearchBookFetchingError'));
 		return null;
 	}
-}
+};
 
-export const buildUpdatedFrontmatterContent =  async (fileManager: FileManager,file: TFile, bookInfo: BookMetadata, custom: CustomField[], toggleFields: ToggleField[],shouldSplitSubTitle: boolean, path: string) => {
+export const buildUpdatedFrontmatterContent = async (
+	fileManager: FileManager,
+	file: TFile,
+	bookInfo: BookMetadata,
+	custom: CustomField[],
+	toggleFields: ToggleField[],
+	shouldSplitSubTitle: boolean,
+	path: string,
+) => {
 	try {
-		const [mainTitle, subTitle] = bookInfo.title.split("-");
-		await fileManager.processFrontMatter(file,(frontmatter) => {
+		const [mainTitle, subTitle] = bookInfo.title.split('-');
+		await fileManager.processFrontMatter(file, frontmatter => {
 			frontmatter['tags'] = bookInfo.categoryName.split('>') ?? [];
-			if (shouldSplitSubTitle && bookInfo.title.split("-").length > 1) {
+			if (shouldSplitSubTitle && bookInfo.title.split('-').length > 1) {
 				frontmatter['title'] = mainTitle.trim();
 				frontmatter['subTitle'] = subTitle.trim();
 			} else {
@@ -87,33 +99,36 @@ export const buildUpdatedFrontmatterContent =  async (fileManager: FileManager,f
 			}
 			frontmatter['author'] = bookInfo.author;
 			frontmatter['publisher'] = bookInfo.publisher;
+			frontmatter['pages'] = bookInfo.subInfo.itemPage;
 			frontmatter['pubDate'] = bookInfo.pubDate;
 			frontmatter['isbn'] = bookInfo.isbn13;
 			frontmatter['cover'] = bookInfo.cover;
-			frontmatter['category'] = bookInfo.categoryName.split(">")[1] ?? '';
-			toggleFields.forEach((toggle) => {
+			frontmatter['category'] = bookInfo.categoryName.split('>')[1] ?? '';
+			toggleFields.forEach(toggle => {
 				if (toggle.enabled && toggle.key.trim()) {
 					if (toggle.key === 'startReadDate' || toggle.key === 'finishReadDate') {
-						frontmatter[toggle.key.trim()] = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split("T")[0];
+						frontmatter[toggle.key.trim()] = new Date(Date.now() + 9 * 60 * 60 * 1000)
+							.toISOString()
+							.split('T')[0];
 					} else {
 						frontmatter[toggle.key.trim()] = toggle.value;
 					}
 				}
-			})
-			custom.forEach((item) => {
+			});
+			custom.forEach(item => {
 				if (item.key.trim()) {
 					frontmatter[item.key.trim()] = item.value;
 				}
-			})
+			});
 		});
-		const folderPath = path.substring(0, path.lastIndexOf("/"));
+		const folderPath = path.substring(0, path.lastIndexOf('/'));
 		const safeTitle = shouldSplitSubTitle ? setSafeTitle(mainTitle.trim()) : setSafeTitle(bookInfo.title);
 		return normalizePath(`${folderPath}/${safeTitle}.md`);
 	} catch (error) {
 		new Notice(getLocaleMessage('updateFrontmatterError'));
 	}
-}
+};
 
 const setSafeTitle = (title: string): string => {
-	return title.replace(/[\/:*?"<>|]/g, "_");
-}
+	return title.replace(/[\/:*?"<>|]/g, '_');
+};
