@@ -89,8 +89,9 @@ export const buildUpdatedFrontmatterContent = async (
 ) => {
 	try {
 		const [mainTitle, subTitle] = bookInfo.title.split('-');
+		const tags = bookInfo.categoryName.split('>').map(tag => tag.trim().replace(/\s/g, ''));
 		await fileManager.processFrontMatter(file, frontmatter => {
-			frontmatter['tags'] = bookInfo.categoryName.split('>') ?? [];
+			frontmatter['tags'] = tags ?? [];
 			if (shouldSplitSubTitle && bookInfo.title.split('-').length > 1) {
 				frontmatter['title'] = mainTitle.trim();
 				frontmatter['subTitle'] = subTitle.trim();
@@ -103,7 +104,7 @@ export const buildUpdatedFrontmatterContent = async (
 			frontmatter['pubDate'] = bookInfo.pubDate;
 			frontmatter['isbn'] = bookInfo.isbn13;
 			frontmatter['cover'] = bookInfo.cover;
-			frontmatter['category'] = bookInfo.categoryName.split('>')[1] ?? '';
+			frontmatter['category'] = tags[1] ?? '';
 			toggleFields.forEach(toggle => {
 				if (toggle.enabled && toggle.key.trim()) {
 					if (toggle.key === 'startReadDate' || toggle.key === 'finishReadDate') {
