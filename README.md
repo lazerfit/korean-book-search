@@ -7,6 +7,9 @@ It uses the [Aladin Open API](https://blog.aladin.co.kr/openapi/popup/6695306) t
 
 ## 🚀 New Features
 
+- v1.4.0:  
+  - Added 'Use High-Quality Cover' Function to settings   	
+
 - v1.3.0:
 	- Added 'pages' to frontmatter fields     	
 
