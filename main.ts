@@ -33,6 +33,7 @@ interface KoreanBookSearchSettings {
 	customFields: CustomField[];
 	defaultFrontmatterFields: ToggleField[];
 	splitSubTitle: boolean;
+	highQualityCover: boolean;
 }
 
 const DEFAULT_SETTINGS: KoreanBookSearchSettings = {
@@ -45,6 +46,7 @@ const DEFAULT_SETTINGS: KoreanBookSearchSettings = {
 		{ key: 'finishReadDate', value: new Date().toISOString().split('T')[0], enabled: false },
 	],
 	splitSubTitle: true,
+	highQualityCover: false,
 };
 
 export default class KoreanBookSearchPlugin extends Plugin {
@@ -59,6 +61,7 @@ export default class KoreanBookSearchPlugin extends Plugin {
 			this.settings.customFields,
 			this.settings.defaultFrontmatterFields,
 			this.settings.splitSubTitle,
+			this.settings.highQualityCover,
 			file.path,
 		);
 
@@ -212,6 +215,15 @@ class KoreanBookSearchSettingTab extends PluginSettingTab {
 			.addToggle(t => {
 				t.setValue(this.plugin.settings.splitSubTitle).onChange(async value => {
 					this.plugin.settings.splitSubTitle = value;
+					await this.plugin.saveSettings();
+				});
+			});
+		new Setting(containerEl)
+			.setName(getLocaleMessage('enableHighQualityCover'))
+			.setDesc(getLocaleMessage('enableHighQualityCover', true))
+			.addToggle(t => {
+				t.setValue(this.plugin.settings.highQualityCover).onChange(async value => {
+					this.plugin.settings.highQualityCover = value;
 					await this.plugin.saveSettings();
 				});
 			});

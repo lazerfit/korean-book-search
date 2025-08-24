@@ -75,6 +75,10 @@ export interface LocaleMessages {
 		message: string;
 		description: string;
 	};
+	enableHighQualityCover: {
+		message: string;
+		description: string;
+	}
 }
 
 const localeMap: Record<string, LocaleMessages> = {

@@ -71,4 +71,9 @@ export const enMessages = {
 		message: '❌ Error searching for book',
 		description: '',
 	},
+	enableHighQualityCover: {
+		message: 'Use High-Quality Cover',
+		description: 'This feature uses a public URL structure, not the official Aladin OpenAPI. It may become unstable or stop working if Aladin changes its URL policy.',
+
+	}
 };

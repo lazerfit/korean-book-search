@@ -85,6 +85,7 @@ export const buildUpdatedFrontmatterContent = async (
 	custom: CustomField[],
 	toggleFields: ToggleField[],
 	shouldSplitSubTitle: boolean,
+	shouldHighQualityCover: boolean,
 	path: string,
 ) => {
 	try {
@@ -103,7 +104,7 @@ export const buildUpdatedFrontmatterContent = async (
 			frontmatter['pages'] = bookInfo.subInfo.itemPage;
 			frontmatter['pubDate'] = bookInfo.pubDate;
 			frontmatter['isbn'] = bookInfo.isbn13;
-			frontmatter['cover'] = bookInfo.cover;
+			frontmatter['cover'] = shouldHighQualityCover ? setHighQualityCover(bookInfo.cover) : bookInfo.cover;
 			frontmatter['category'] = tags[1] ?? '';
 			toggleFields.forEach(toggle => {
 				if (toggle.enabled && toggle.key.trim()) {
@@ -132,4 +133,10 @@ export const buildUpdatedFrontmatterContent = async (
 
 const setSafeTitle = (title: string): string => {
 	return title.replace(/[\/:*?"<>|]/g, '_');
+};
+
+const setHighQualityCover = (cover: string): string => {
+	let highQualityUrl = cover.replace(/coversum/i, 'letslook');
+	highQualityUrl = highQualityUrl.replace(/_\d\.jpg$/,'_f.jpg')
+	return highQualityUrl;
 };

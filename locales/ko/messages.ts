@@ -71,4 +71,8 @@ export const koMessages = {
 		message: '❌ 책 정보를 가져오는 도중 오류가 발생했습니다.',
 		description: '',
 	},
+	enableHighQualityCover: {
+		message: '고화질 표지 사용',
+		description: '이 기능은 알라딘 OpenAPI가 아닌 공개된 URL 구조를 활용합니다. 알라딘 측의 URL 정책 변경으로 인해 기능이 불안정해지거나 작동하지 않을 수 있습니다.',
+	}
 };
