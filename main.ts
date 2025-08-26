@@ -73,7 +73,7 @@ export default class KoreanBookSearchPlugin extends Plugin {
 		try {
 			await this.app.vault.rename(file, newPath);
 			new Notice(getLocaleMessage('updateBookInfoSuccess'));
-		} catch (e) {
+		} catch {
 			new Notice(getLocaleMessage('updateBookInfoError'));
 		}
 	};
@@ -87,7 +87,7 @@ export default class KoreanBookSearchPlugin extends Plugin {
 			const bookInfo = data.item[0];
 			new Notice(getLocaleMessage('updateBookInfoProcessing'));
 			await this.setFrontmatterDataToFile(file, bookInfo);
-		} catch (error) {
+		} catch {
 			new Notice(getLocaleMessage('updateBookInfoProcessingError'));
 		}
 	};
@@ -122,13 +122,9 @@ export default class KoreanBookSearchPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
-		const ribbonIconEl = this.addRibbonIcon(
-			'book-open',
-			'Automatic book information entry',
-			async (evt: MouseEvent) => {
-				await this.handleBookInfoEntry();
-			},
-		);
+		const ribbonIconEl = this.addRibbonIcon('book-open', 'Automatic book information entry', async () => {
+			await this.handleBookInfoEntry();
+		});
 
 		this.addCommand({
 			id: 'korean-book-search-update-frontmatter',
@@ -143,10 +139,11 @@ export default class KoreanBookSearchPlugin extends Plugin {
 		this.addSettingTab(new KoreanBookSearchSettingTab(this.app, this));
 	}
 
+	// eslint-disable-next-line @typescript-eslint/no-empty-function
 	onunload() {}
 
 	async loadSettings() {
-		const loaded = await this.loadData();
+		const loaded = (await this.loadData()) as KoreanBookSearchSettings;
 		this.settings = {
 			...DEFAULT_SETTINGS,
 			...loaded,
@@ -180,7 +177,7 @@ class KoreanBookSearchSettingTab extends PluginSettingTab {
 				text.inputEl.type = 'password';
 				text.setPlaceholder('ttbkey...')
 					.setValue(this.plugin.settings.API_KEY)
-					.onChange(async value => {
+					.onChange(value => {
 						apiKeyInput = value;
 					});
 			})
@@ -193,7 +190,7 @@ class KoreanBookSearchSettingTab extends PluginSettingTab {
 						try {
 							await this.plugin.saveSettings();
 							new Notice(getLocaleMessage('APIkeySaved'));
-						} catch (e) {
+						} catch {
 							new Notice(getLocaleMessage('APIkeyError'));
 						}
 					}),
