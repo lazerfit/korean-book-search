@@ -34,7 +34,7 @@ export const searchBook = async (title: string, ttbKey: string) => {
 		const params = new URLSearchParams({
 			ttbkey: ttbKey,
 			Query: title,
-			QueryType: 'Title',
+			QueryType: 'Keyword',
 			MaxResults: '1',
 			...baseParams,
 		});
