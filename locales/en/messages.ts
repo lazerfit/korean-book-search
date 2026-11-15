@@ -8,7 +8,7 @@ export const enMessages = {
 		description: '',
 	},
 	APIKeyEnter: {
-		message: 'Enter your aladin API key',
+		message: 'Enter your YES24 Open API key (issued at developers.yes24.com)',
 		description: '',
 	},
 	APIKeyNotSet: {
@@ -71,9 +71,8 @@ export const enMessages = {
 		message: '❌ Error searching for book',
 		description: '',
 	},
-	enableHighQualityCover: {
-		message: 'Use High-Quality Cover',
-		description:
-			'This feature uses a public URL structure, not the official Aladin OpenAPI. It may become unstable or stop working if Aladin changes its URL policy.',
+	APIKeyInvalid: {
+		message: '❌ Invalid YES24 API key',
+		description: '',
 	},
 };

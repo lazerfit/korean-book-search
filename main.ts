@@ -1,21 +1,7 @@
 import { App, Notice, Plugin, PluginSettingTab, Setting, TFile } from 'obsidian';
 import { searchBook, getBookInfo, buildUpdatedFrontmatterContent, escapeHtml } from './src/bookService';
+import type { BookMetadata } from './src/yes24';
 import { getLocaleMessage, type LocaleMessages } from './src/localeService';
-
-export interface BookMetadata {
-	title: string;
-	author: string;
-	pubDate: string;
-	isbn13: string;
-	cover: string;
-	categoryName: string;
-	publisher: string;
-	subInfo: SubInfo;
-}
-
-interface SubInfo {
-	itemPage: number;
-}
 
 export interface CustomField {
 	key: string;
@@ -33,7 +19,6 @@ interface KoreanBookSearchSettings {
 	customFields: CustomField[];
 	defaultFrontmatterFields: ToggleField[];
 	splitSubTitle: boolean;
-	highQualityCover: boolean;
 }
 
 const DEFAULT_SETTINGS: KoreanBookSearchSettings = {
@@ -46,7 +31,6 @@ const DEFAULT_SETTINGS: KoreanBookSearchSettings = {
 		{ key: 'finishReadDate', value: new Date().toISOString().split('T')[0], enabled: false },
 	],
 	splitSubTitle: true,
-	highQualityCover: false,
 };
 
 export default class KoreanBookSearchPlugin extends Plugin {
@@ -61,7 +45,6 @@ export default class KoreanBookSearchPlugin extends Plugin {
 			this.settings.customFields,
 			this.settings.defaultFrontmatterFields,
 			this.settings.splitSubTitle,
-			this.settings.highQualityCover,
 			file.path,
 		);
 
@@ -80,11 +63,10 @@ export default class KoreanBookSearchPlugin extends Plugin {
 
 	updateBookFrontmatter = async (cleanTitle: string, API_KEY: string, file: TFile) => {
 		try {
-			const isbn = await searchBook(cleanTitle, API_KEY);
-			if (!isbn) return;
-			const data = await getBookInfo(isbn, API_KEY);
-			if (!data) return;
-			const bookInfo = data.item[0];
+			const itemId = await searchBook(cleanTitle, API_KEY);
+			if (!itemId) return;
+			const bookInfo = await getBookInfo(itemId, API_KEY);
+			if (!bookInfo) return;
 			new Notice(getLocaleMessage('updateBookInfoProcessing'));
 			await this.setFrontmatterDataToFile(file, bookInfo);
 		} catch {
@@ -175,7 +157,7 @@ class KoreanBookSearchSettingTab extends PluginSettingTab {
 			.setDesc(getLocaleMessage('APIKeyEnter'))
 			.addText(text => {
 				text.inputEl.type = 'password';
-				text.setPlaceholder('ttbkey...')
+				text.setPlaceholder('YES24 API key')
 					.setValue(this.plugin.settings.API_KEY)
 					.onChange(value => {
 						apiKeyInput = value;
@@ -212,15 +194,6 @@ class KoreanBookSearchSettingTab extends PluginSettingTab {
 			.addToggle(t => {
 				t.setValue(this.plugin.settings.splitSubTitle).onChange(async value => {
 					this.plugin.settings.splitSubTitle = value;
-					await this.plugin.saveSettings();
-				});
-			});
-		new Setting(containerEl)
-			.setName(getLocaleMessage('enableHighQualityCover'))
-			.setDesc(getLocaleMessage('enableHighQualityCover', true))
-			.addToggle(t => {
-				t.setValue(this.plugin.settings.highQualityCover).onChange(async value => {
-					this.plugin.settings.highQualityCover = value;
 					await this.plugin.saveSettings();
 				});
 			});

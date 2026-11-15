@@ -3,7 +3,7 @@
 	"name": "Korean Book Search",
 	"version": "1.4.2",
 	"minAppVersion": "1.8.10",
-	"description": "Automatically fills in YAML frontmatter with Korean book information from Aladin API based on the note title.",
+	"description": "Automatically fills in YAML frontmatter with Korean book information from the YES24 Open API based on the note title.",
 	"author": "lazerfit",
 	"authorUrl": "https://github.com/lazerfit",
 	"isDesktopOnly": false

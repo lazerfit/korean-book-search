@@ -75,7 +75,7 @@ export interface LocaleMessages {
 		message: string;
 		description: string;
 	};
-	enableHighQualityCover: {
+	APIKeyInvalid: {
 		message: string;
 		description: string;
 	}
