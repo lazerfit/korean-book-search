@@ -1,11 +1,15 @@
 # Korean Book Search
 
 A plugin for Obsidian that automatically fills in YAML frontmatter with Korean book information based on the note title.  
-It uses the [Aladin Open API](https://blog.aladin.co.kr/openapi/popup/6695306) to fetch metadata like title, author, publisher, publication date, cover image, and more.
+It uses the [YES24 Open API](https://developers.yes24.com) to fetch metadata like title, author, publisher, publication date, cover image, and more.
 
 ---
 
 ## 🚀 New Features
+
+- v2.0.0:
+  - Switched from the Aladin API to the YES24 Open API (a YES24 API key is now required)
+  - Added `link` (YES24 product page) to frontmatter; removed `tags`, `category` and the high-quality cover option
 
 - v1.4.0:  
   - Added 'Use High-Quality Cover' Function to settings   	
@@ -21,7 +25,7 @@ It uses the [Aladin Open API](https://blog.aladin.co.kr/openapi/popup/6695306) t
 
 ## 📚 Features
 
-- 📖 Automatically fetch book data using Aladin Open API
+- 📖 Automatically fetch book data using the YES24 Open API
 - ✍️ Fills YAML frontmatter with title, author, publisher, ISBN, publication date, etc.
 - 🧩 Toggle default fields like `myRate`, `status`, `startReadDate`, `finishReadDate`
 - 📋 Add custom frontmatter fields via settings UI
@@ -49,7 +53,7 @@ It uses the [Aladin Open API](https://blog.aladin.co.kr/openapi/popup/6695306) t
 ## 🔧 Setup
 
 1. Go to `Settings → Korean Book Search`
-2. Enter your [Aladin TTB API key](https://blog.aladin.co.kr/openapi/popup/6695306)
+2. Enter your YES24 Open API key. Log in at [developers.yes24.com](https://developers.yes24.com) with a YES24 account and apply; the key is issued immediately and the basic plan is free.
 3. (Optional) Toggle the default frontmatter fields you want to include
 4. (Optional) Add any custom key-value pairs you want to include in frontmatter
 
@@ -60,7 +64,7 @@ It uses the [Aladin Open API](https://blog.aladin.co.kr/openapi/popup/6695306) t
 1. Create a new note with the title of a book (e.g. `소년이 온다`)
 2. Click the book icon 📖 in the left ribbon
 3. The plugin will:
-	- Query the book via Aladin API
+	- Query the book via the YES24 Open API
 	- Fetch metadata
 	- Insert a YAML frontmatter block
 	- Rename the file to match the book title
@@ -72,20 +76,24 @@ It uses the [Aladin Open API](https://blog.aladin.co.kr/openapi/popup/6695306) t
 ```yaml
 ---
 title: 소년이 온다
-subTitle: 2024 노벨문학상 수상작가
-author: 한강 (지은이)
+author: 한강
 publisher: 창비
 pages: 216
 pubDate: 2014-05-19
 isbn: 9788936434120
-cover: https://image.aladin.co.kr/...
-category: 소설/시/희곡
+cover: https://image.yes24.com/...
+link: https://www.yes24.com/product/goods/...
 myRate: 5
 status: 읽는 중
 startReadDate: 2025-05-13
 finishReadDate: 2025-05-13
 ---
 ```
+
+## 🌐 Network use
+
+This plugin sends the note title and your API key to `apis.yes24.com` when you run the command. Nothing else is sent anywhere.  
+Book data is provided by [YES24](https://www.yes24.com). This plugin is not affiliated with YES24.
 
 ## 🙋 Author  
 Developed by @lazerfit

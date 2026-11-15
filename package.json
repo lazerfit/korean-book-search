@@ -6,6 +6,7 @@
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+		"test": "esbuild src/yes24.test.ts --bundle --platform=node | node",
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
 		"format": "prettier --write \"./**/*.{js,jsx,ts,tsx,json,css,scss,md}\""
 	},

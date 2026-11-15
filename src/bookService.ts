@@ -1,18 +1,24 @@
 import { getLocaleMessage } from './localeService';
 import { normalizePath, Notice, requestUrl, moment } from 'obsidian';
-import type { BookMetadata, CustomField, ToggleField } from '../main';
+import type { CustomField, ToggleField } from '../main';
+import { firstItem, normalizeDate, type BookMetadata, type Yes24Response } from './yes24';
 import type { FileManager, TFile } from 'obsidian';
 
-interface BookResponseData {
-	item: BookMetadata[];
-}
+const apiBase = 'https://apis.yes24.com/v1/goods';
 
-const itemSearchUrl = 'http://www.aladin.co.kr/ttb/api/ItemSearch.aspx';
-const itemLookupUrl = 'http://www.aladin.co.kr/ttb/api/ItemLookUp.aspx';
-
-const baseParams = {
-	Output: 'JS',
-	Version: '20131101',
+// Calls a YES24 endpoint and returns the first item, or null after showing a Notice.
+const fetchFirstItem = async (endpoint: string, params: Record<string, string>, apiKey: string) => {
+	const response = await requestUrl({
+		url: `${apiBase}/${endpoint}?${new URLSearchParams(params).toString()}`,
+		headers: { 'X-Api-Key': apiKey },
+		throw: false, // YES24 reports errors in the JSON body (errorCode)
+	});
+	const result = firstItem(response.json as Yes24Response);
+	if (typeof result === 'string') {
+		new Notice(getLocaleMessage(result));
+		return null;
+	}
+	return result;
 };
 
 export const escapeHtml = (str: string): string => {
@@ -29,50 +35,21 @@ export const escapeHtml = (str: string): string => {
 	);
 };
 
-export const searchBook = async (title: string, ttbKey: string) => {
+export const searchBook = async (title: string, apiKey: string) => {
 	try {
-		const params = new URLSearchParams({
-			ttbkey: ttbKey,
-			Query: title,
-			QueryType: 'Keyword',
-			MaxResults: '1',
-			...baseParams,
-		});
-		const searchUrl = `${itemSearchUrl}?${params.toString()}`;
-
-		const response = await requestUrl({ url: searchUrl });
-		const data = response.json as BookResponseData;
-
-		if (data.item.length === 0) {
-			new Notice(getLocaleMessage('SearchBookTitleError'));
-			return null;
-		}
-
-		return data.item[0].isbn13;
+		const item = await fetchFirstItem('itemList', { query: title, category: 'BOOK', pageSize: '1' }, apiKey);
+		return item?.itemId ?? null;
 	} catch {
 		new Notice(getLocaleMessage('SearchBookError'));
 		return null;
 	}
 };
 
-export const getBookInfo = async (isbn: string, ttbKey: string) => {
+// ponytail: two calls per book (search, then detail). itemList with detail=Y may already
+// return every field; collapse to one call once that is confirmed against a live response.
+export const getBookInfo = async (itemId: number, apiKey: string) => {
 	try {
-		const params = new URLSearchParams({
-			ttbkey: ttbKey,
-			ItemId: isbn,
-			...baseParams,
-		});
-		const lookupUrl = `${itemLookupUrl}?${params.toString()}`;
-
-		const response = await requestUrl({ url: lookupUrl });
-		const data = response.json as BookResponseData;
-
-		if (data.item.length === 0) {
-			new Notice(getLocaleMessage('SearchBookTitleError'));
-			return null;
-		}
-
-		return data;
+		return await fetchFirstItem('itemDetail', { searchType: 'ItemId', query: String(itemId), detail: 'Y' }, apiKey);
 	} catch {
 		new Notice(getLocaleMessage('SearchBookFetchingError'));
 		return null;
@@ -80,16 +57,15 @@ export const getBookInfo = async (isbn: string, ttbKey: string) => {
 };
 
 interface MyFrontmatter {
-	tags: string[];
 	title: string;
 	subTitle?: string;
 	author: string;
 	publisher: string;
-	pages: number;
+	pages?: number;
 	pubDate: string;
 	isbn: string;
 	cover: string;
-	category: string;
+	link: string;
 	[key: string]: string | number | boolean | string[] | undefined | null;
 }
 
@@ -100,27 +76,20 @@ export const buildUpdatedFrontmatterContent = async (
 	custom: CustomField[],
 	toggleFields: ToggleField[],
 	shouldSplitSubTitle: boolean,
-	shouldHighQualityCover: boolean,
 	path: string,
 ) => {
 	try {
-		const [mainTitle, subTitle] = bookInfo.title.split('-');
-		const tags = bookInfo.categoryName.split('>').map(tag => tag.trim().replace(/\s/g, ''));
 		await fileManager.processFrontMatter(file, (frontmatter: MyFrontmatter) => {
-			frontmatter.tags = tags ?? [];
-			if (shouldSplitSubTitle && bookInfo.title.split('-').length > 1) {
-				frontmatter.title = mainTitle.trim();
-				frontmatter.subTitle = subTitle.trim();
-			} else {
-				frontmatter.title = bookInfo.title;
-			}
+			frontmatter.title = bookInfo.title;
+			if (shouldSplitSubTitle && bookInfo.subTitle) frontmatter.subTitle = bookInfo.subTitle;
 			frontmatter.author = bookInfo.author;
 			frontmatter.publisher = bookInfo.publisher;
-			frontmatter.pages = bookInfo.subInfo.itemPage;
-			frontmatter.pubDate = bookInfo.pubDate;
+			if (bookInfo.pages) frontmatter.pages = bookInfo.pages;
+			frontmatter.pubDate = normalizeDate(bookInfo.publishDate);
 			frontmatter.isbn = bookInfo.isbn13;
-			frontmatter.cover = shouldHighQualityCover ? setHighQualityCover(bookInfo.cover) : bookInfo.cover;
-			frontmatter.category = tags[1] ?? '';
+			frontmatter.cover = bookInfo.cover;
+			// YES24 API terms require a link back to the product page.
+			frontmatter.link = bookInfo.link;
 			toggleFields.forEach(toggle => {
 				if (toggle.enabled && toggle.key.trim()) {
 					if (toggle.key === 'startReadDate' || toggle.key === 'finishReadDate') {
@@ -137,7 +106,7 @@ export const buildUpdatedFrontmatterContent = async (
 			});
 		});
 		const folderPath = path.substring(0, path.lastIndexOf('/'));
-		const safeTitle = shouldSplitSubTitle ? setSafeTitle(mainTitle.trim()) : setSafeTitle(bookInfo.title);
+		const safeTitle = setSafeTitle(bookInfo.title);
 		return normalizePath(`${folderPath}/${safeTitle}.md`);
 	} catch {
 		new Notice(getLocaleMessage('updateFrontmatterError'));
@@ -148,8 +117,3 @@ const setSafeTitle = (title: string): string => {
 	return title.replace(/[/:*?"<>|]/g, '_');
 };
 
-const setHighQualityCover = (cover: string): string => {
-	let highQualityUrl = cover.replace(/coversum/i, 'letslook');
-	highQualityUrl = highQualityUrl.replace(/_\d\.jpg$/, '_f.jpg');
-	return highQualityUrl;
-};
